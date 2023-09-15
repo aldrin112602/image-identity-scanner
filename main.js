@@ -21,7 +21,6 @@ $(function () {
       const results = await classifier.classify(document.getElementById(id));
       
       const { label, confidence } = findHighestConfidence(results);
-      console.log(results);
 
       $("#editProfile").prop("disabled", false).html(`Edit profile`);
       

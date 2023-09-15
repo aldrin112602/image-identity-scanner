@@ -1,47 +1,34 @@
 $(function () {
-  $("#editProfile").on("click", function () {
-    $("#uploadFile").click();
-  });
+  $("#editProfile").on("click", () => $("#uploadFile").click());
 
   $("#uploadFile").on("change", function (ev) {
-    $("#editProfile").attr("disabled", true);
-    $("#editProfile").html(
+    const file = ev.target.files[0];
+    $("#editProfile").prop("disabled", true).html(
       `<span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span> Scanning image...`
     );
-    const file = ev.target.files[0];
+    
     const reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = (e) => {
       $("#imgProfile").attr("src", e.target.result);
-      setTimeout(() => {
-        scanImage("imgProfile");
-      }, 1000);
+      setTimeout(() => scanImage("imgProfile"), 100);
     };
     reader.readAsDataURL(file);
   });
 
-  function scanImage(id) {
-    const classifier = ml5.imageClassifier("MobileNet");
+  async function scanImage(id) {
     try {
-      classifier.classify(
-        document.getElementById(id),
-        function gotResult(error, results) {
-          if (error) throw error;
-          else {
-            const { label, confidence } = findHighestConfidence(results);
-            console.log(results);
+      const classifier = await ml5.imageClassifier("MobileNet");
+      const results = await classifier.classify(document.getElementById(id));
+      
+      const { label, confidence } = findHighestConfidence(results);
+      console.log(results);
 
-            $("#editProfile").attr("disabled", false);
-            $("#editProfile").html(`Edit profile`);
-
-            Swal.fire(
-              "Scanning success!",
-              `Scan Result: It's ${label}, confidence of ${
-                (confidence * 100).toFixed(2)
-              }%`,
-              "success"
-            );
-          }
-        }
+      $("#editProfile").prop("disabled", false).html(`Edit profile`);
+      
+      Swal.fire(
+        "Scan completed!",
+        `Scan Result: It's ${label}, confidence of ${(confidence * 100).toFixed(2)}%`,
+        "success"
       );
     } catch (err) {
       Swal.fire("Error!", err, "error");
@@ -49,16 +36,6 @@ $(function () {
   }
 
   function findHighestConfidence(data) {
-    let highestConfidence = -1;
-    let highestConfidenceItem = null;
-
-    for (const item of data) {
-      if (item.confidence > highestConfidence) {
-        highestConfidence = item.confidence;
-        highestConfidenceItem = item;
-      }
-    }
-
-    return highestConfidenceItem;
+    return data.reduce((prev, current) => (current.confidence > prev.confidence) ? current : prev);
   }
 });
